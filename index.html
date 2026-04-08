@@ -1,0 +1,2327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NormaAI · Gestión de No Conformidades</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e2dfd8;
+    --border-strong: #c8c4bc;
+    --ink: #1a1916;
+    --ink-2: #4a4842;
+    --ink-3: #8a8780;
+    --accent: #1d4ed8;
+    --accent-light: #eff3ff;
+    --accent-border: #bfcfff;
+    --warn: #b45309;
+    --warn-light: #fffbeb;
+    --warn-border: #fcd34d;
+    --success: #15803d;
+    --success-light: #f0fdf4;
+    --success-border: #86efac;
+    --danger: #b91c1c;
+    --danger-light: #fff5f5;
+    --danger-border: #fca5a5;
+    --tag-open: #fee2e2;
+    --tag-open-text: #991b1b;
+    --tag-analysis: #fef3c7;
+    --tag-analysis-text: #92400e;
+    --tag-plan: #dbeafe;
+    --tag-plan-text: #1e40af;
+    --tag-closed: #dcfce7;
+    --tag-closed-text: #166534;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--ink);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: white;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: white;
+    letter-spacing: -0.3px;
+  }
+
+  .brand-name span {
+    color: #93c5fd;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .norma-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .demo-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    background: rgba(29,78,216,0.3);
+    border: 1px solid rgba(147,197,253,0.3);
+    border-radius: 4px;
+    color: #93c5fd;
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 52px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 0 8px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink-2);
+    font-size: 13px;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-item:hover { background: var(--bg); color: var(--ink); }
+  .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+
+  .nav-icon { font-size: 14px; opacity: 0.7; }
+
+  .nav-count {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: var(--tag-open);
+    color: var(--tag-open-text);
+    padding: 1px 6px;
+    border-radius: 99px;
+  }
+
+  .nav-count.blue {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  /* MAIN */
+  .main {
+    padding: 28px 32px;
+    overflow-y: auto;
+  }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeUp 0.25s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+    margin-bottom: 3px;
+  }
+
+  .page-sub {
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-delta {
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .stat-delta.up { color: var(--danger); }
+  .stat-delta.down { color: var(--success); }
+
+  /* NC TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-toolbar {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .table-title {
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .btn-primary {
+    padding: 7px 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary:hover { background: #1e40af; }
+
+  .btn-ghost {
+    padding: 7px 14px;
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: #fafaf8; cursor: pointer; }
+
+  .nc-code {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .nc-desc {
+    max-width: 280px;
+    color: var(--ink);
+    font-size: 13px;
+  }
+
+  .status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .tag-open { background: var(--tag-open); color: var(--tag-open-text); }
+  .tag-analysis { background: var(--tag-analysis); color: var(--tag-analysis-text); }
+  .tag-plan { background: var(--tag-plan); color: var(--tag-plan-text); }
+  .tag-closed { background: var(--tag-closed); color: var(--tag-closed-text); }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .priority-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .p-alta { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger-border); }
+  .p-media { background: var(--warn-light); color: var(--warn); border: 1px solid var(--warn-border); }
+  .p-baja { background: var(--success-light); color: var(--success); border: 1px solid var(--success-border); }
+
+  .action-link {
+    color: var(--accent);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .action-link:hover { text-decoration: underline; }
+
+  /* DETAIL VIEW */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-weight: 500;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .field-value {
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .field-textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    width: 100%;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+  }
+
+  .field-textarea:focus { border-color: var(--accent); }
+  .field-textarea::placeholder { color: var(--ink-3); }
+
+  .field-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field-input:focus { border-color: var(--accent); }
+
+  .field-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    width: 100%;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* AI PANEL */
+  .ai-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: sticky;
+    top: 72px;
+  }
+
+  .ai-header {
+    padding: 14px 18px;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ai-mark {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: white;
+    font-weight: 500;
+  }
+
+  .ai-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+  }
+
+  .ai-sub {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 1px;
+  }
+
+  .ai-body {
+    padding: 16px;
+    min-height: 200px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .ai-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink-3);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .ai-empty-icon { font-size: 24px; margin-bottom: 8px; opacity: 0.4; }
+
+  .ai-result { animation: fadeUp 0.3s ease; }
+
+  .ai-section {
+    margin-bottom: 16px;
+  }
+
+  .ai-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .causa-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--warn-light);
+    border: 1px solid var(--warn-border);
+    border-radius: 7px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .causa-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--warn);
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .accion-item {
+    padding: 10px 12px;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    border-radius: 7px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .accion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .accion-title {
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .accion-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-3);
+  }
+
+  .accion-desc { color: var(--ink-2); }
+
+  .ai-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-analyze {
+    flex: 1;
+    padding: 9px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-analyze:hover { background: #1e40af; }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* TIMELINE */
+  .timeline {
+    position: relative;
+    padding-left: 20px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px; top: 6px; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .tl-item {
+    position: relative;
+    margin-bottom: 16px;
+    padding-left: 16px;
+  }
+
+  .tl-dot {
+    position: absolute;
+    left: -20px; top: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface);
+  }
+
+  .tl-dot.active { border-color: var(--accent); background: var(--accent); }
+  .tl-dot.done { border-color: var(--success); background: var(--success); }
+
+  .tl-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+
+  .tl-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+  }
+
+  /* CHAT CONVERSATION */
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    min-height: 260px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .chat-msg {
+    display: flex;
+    gap: 8px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .chat-msg.user { flex-direction: row-reverse; }
+
+  .chat-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .chat-msg.ai .chat-avatar {
+    background: var(--accent);
+    color: white;
+  }
+
+  .chat-msg.user .chat-avatar {
+    background: var(--ink);
+    color: white;
+    font-size: 9px;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    padding: 10px 13px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .chat-msg.ai .chat-bubble {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--ink-2);
+    border-top-left-radius: 2px;
+  }
+
+  .chat-msg.user .chat-bubble {
+    background: var(--accent);
+    color: white;
+    border-top-right-radius: 2px;
+  }
+
+  .chat-bubble strong { font-weight: 600; }
+
+  .why-badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    background: var(--warn-light);
+    color: var(--warn);
+    border: 1px solid var(--warn-border);
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 12px;
+  }
+
+  .qr-btn {
+    padding: 6px 11px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .qr-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .chat-input-area {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+
+  .chat-text-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    resize: none;
+    height: 36px;
+  }
+
+  .chat-text-input:focus { border-color: var(--accent); }
+  .chat-text-input::placeholder { color: var(--ink-3); }
+
+  .chat-send-btn {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .chat-send-btn:hover { background: #1e40af; }
+  .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .progress-5why {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .why-step {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    transition: background 0.4s;
+  }
+
+  .why-step.done { background: var(--success); }
+  .why-step.active { background: var(--warn); }
+
+  .why-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--ink-3);
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  .final-result-card {
+    margin: 12px 16px;
+    padding: 12px;
+    background: var(--success-light);
+    border: 1px solid var(--success-border);
+    border-radius: 8px;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .final-result-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--success);
+    margin-bottom: 8px;
+  }
+
+  .final-causa {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid var(--success);
+  }
+
+  .accion-mini {
+    font-size: 11px;
+    color: var(--ink-2);
+    padding: 6px 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .accion-mini-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .typing-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    animation: fadeUp 0.2s ease;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    padding: 10px 13px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    border-top-left-radius: 2px;
+  }
+
+  .td {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    animation: tdBounce 1.2s infinite;
+  }
+
+  .td:nth-child(2) { animation-delay: 0.2s; }
+  .td:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes tdBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .btn-pdf {
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--success-border);
+    border-radius: 6px;
+    color: var(--success);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-pdf:hover { background: var(--success-light); }
+
+  @media print {
+    body * { visibility: hidden; }
+    #pdf-content, #pdf-content * { visibility: visible; }
+    #pdf-content { position: absolute; left: 0; top: 0; width: 100%; }
+  }
+
+  /* LOADING */
+  .loading-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .ld {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s infinite;
+    opacity: 0.6;
+  }
+
+  .ld:nth-child(2) { animation-delay: 0.2s; }
+  .ld:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* FORM VIEW */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-width: 640px;
+  }
+
+  .form-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .form-sub { color: var(--ink-3); font-size: 12px; }
+
+  .form-body { padding: 24px; }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .form-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .clause-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+
+  /* BACK BTN */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-3);
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .back-btn:hover { color: var(--ink); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--ink);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+    animation: fadeUp 0.3s ease;
+    z-index: 999;
+    max-width: 280px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  .toast.show { display: block; }
+  .toast-green { background: var(--success); }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">NA</div>
+    <div class="brand-name">Norma<span>AI</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="norma-badge">ISO 9001:2015</span>
+    <span class="demo-badge">DEMO</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Gestión</div>
+      <button class="nav-item active" onclick="showView('dashboard', this)">
+        <span class="nav-icon">▦</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showView('lista', this)">
+        <span class="nav-icon">≡</span> No Conformidades
+        <span class="nav-count">3</span>
+      </button>
+      <button class="nav-item" onclick="showView('nueva', this)">
+        <span class="nav-icon">+</span> Nueva NC
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Análisis</div>
+      <button class="nav-item" onclick="showView('lista', this)">
+        <span class="nav-icon">◎</span> Análisis IA
+        <span class="nav-count blue">2</span>
+      </button>
+      <button class="nav-item" onclick="showView('dashboard', this)">
+        <span class="nav-icon">↗</span> Indicadores
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sistema</div>
+      <button class="nav-item">
+        <span class="nav-icon">⚙</span> Configuración
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- VIEW: DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Resumen del sistema de gestión · Abril 2026</div>
+        </div>
+        <button class="btn-primary" onclick="showView('nueva', document.querySelector('.nav-item'))">+ Nueva NC</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total NCs</div>
+          <div class="stat-value">3</div>
+          <div class="stat-delta up">↑ 1 este mes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Abiertas</div>
+          <div class="stat-value" style="color:var(--danger)">1</div>
+          <div class="stat-delta">Requieren acción</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">En análisis IA</div>
+          <div class="stat-value" style="color:var(--warn)">1</div>
+          <div class="stat-delta">Pendiente plan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cerradas</div>
+          <div class="stat-value" style="color:var(--success)">1</div>
+          <div class="stat-delta down">↓ Tiempo prom. 18d</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <span class="table-title">No Conformidades recientes</span>
+          <button class="btn-ghost" onclick="showView('lista', document.querySelector('.nav-item'))">Ver todas →</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Cláusula</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="openDetail('NC-2026-003')">
+              <td class="nc-code">NC-2026-003</td>
+              <td class="nc-desc">Registros de calibración de equipos de medición sin actualizar por más de 6 meses</td>
+              <td><span class="clause-tag">7.1.5</span></td>
+              <td><span class="status-tag tag-open"><span class="dot"></span>Abierta</span></td>
+              <td><span class="priority-tag p-alta">Alta</span></td>
+              <td><a class="action-link" onclick="openDetail('NC-2026-003')">Analizar →</a></td>
+            </tr>
+            <tr onclick="openDetail('NC-2026-002')">
+              <td class="nc-code">NC-2026-002</td>
+              <td class="nc-desc">Procedimiento de control de documentos desactualizado, versión 2019 en uso</td>
+              <td><span class="clause-tag">7.5</span></td>
+              <td><span class="status-tag tag-analysis"><span class="dot"></span>En análisis</span></td>
+              <td><span class="priority-tag p-media">Media</span></td>
+              <td><a class="action-link" onclick="openDetail('NC-2026-002')">Ver análisis →</a></td>
+            </tr>
+            <tr onclick="openDetail('NC-2026-001')">
+              <td class="nc-code">NC-2026-001</td>
+              <td class="nc-desc">Encuesta de satisfacción de clientes no ejecutada en Q4 2025</td>
+              <td><span class="clause-tag">9.1.2</span></td>
+              <td><span class="status-tag tag-closed"><span class="dot"></span>Cerrada</span></td>
+              <td><span class="priority-tag p-baja">Baja</span></td>
+              <td><a class="action-link">Ver cierre →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW: LISTA -->
+    <div class="view" id="view-lista">
+      <div class="page-header">
+        <div>
+          <div class="page-title">No Conformidades</div>
+          <div class="page-sub">ISO 9001:2015 · 3 registros</div>
+        </div>
+        <button class="btn-primary" onclick="showView('nueva', document.querySelector('.nav-item'))">+ Nueva NC</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Cláusula</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="openDetail('NC-2026-003')">
+              <td class="nc-code">NC-2026-003</td>
+              <td class="nc-desc">Registros de calibración de equipos sin actualizar por más de 6 meses</td>
+              <td><span class="clause-tag">7.1.5</span></td>
+              <td>J. Fernández</td>
+              <td><span class="status-tag tag-open"><span class="dot"></span>Abierta</span></td>
+              <td><span class="priority-tag p-alta">Alta</span></td>
+              <td><a class="action-link" onclick="openDetail('NC-2026-003')">Analizar →</a></td>
+            </tr>
+            <tr onclick="openDetail('NC-2026-002')">
+              <td class="nc-code">NC-2026-002</td>
+              <td class="nc-desc">Procedimiento de control de documentos desactualizado</td>
+              <td><span class="clause-tag">7.5</span></td>
+              <td>M. González</td>
+              <td><span class="status-tag tag-analysis"><span class="dot"></span>En análisis</span></td>
+              <td><span class="priority-tag p-media">Media</span></td>
+              <td><a class="action-link" onclick="openDetail('NC-2026-002')">Ver →</a></td>
+            </tr>
+            <tr onclick="openDetail('NC-2026-001')">
+              <td class="nc-code">NC-2026-001</td>
+              <td class="nc-desc">Encuesta de satisfacción de clientes no ejecutada en Q4 2025</td>
+              <td><span class="clause-tag">9.1.2</span></td>
+              <td>A. Morales</td>
+              <td><span class="status-tag tag-closed"><span class="dot"></span>Cerrada</span></td>
+              <td><span class="priority-tag p-baja">Baja</span></td>
+              <td><a class="action-link">Ver cierre →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW: DETAIL -->
+    <div class="view" id="view-detail">
+      <button class="back-btn" onclick="showView('lista', document.querySelector('.nav-item:nth-child(2)'))">← Volver a lista</button>
+
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="detail-title">NC-2026-003</div>
+          <div class="page-sub" id="detail-sub">Registros de calibración sin actualizar · Cláusula 7.1.5</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="status-tag tag-open" id="detail-status"><span class="dot"></span>Abierta</span>
+          <span class="priority-tag p-alta" id="detail-priority">Alta</span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+
+        <!-- LEFT -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 Descripción de la NC</div>
+            </div>
+            <div class="card-body">
+              <div class="field-row">
+                <div class="field">
+                  <div class="field-label">Código</div>
+                  <div class="field-value" id="d-code" style="font-family:'DM Mono',monospace;font-size:12px">NC-2026-003</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Cláusula ISO 9001</div>
+                  <div class="field-value"><span class="clause-tag" id="d-clause">7.1.5</span></div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Responsable</div>
+                  <div class="field-value" id="d-resp">J. Fernández</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Fecha detección</div>
+                  <div class="field-value" id="d-date">03/04/2026</div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-label" style="margin-bottom:6px">Descripción de la hallazgo</div>
+                <div id="d-desc" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;color:var(--ink-2);line-height:1.6">
+                  Los registros de calibración de los equipos de medición del área de producción no han sido actualizados en los últimos 6 meses. Se detectaron 4 equipos con certificados vencidos. Esto compromete la trazabilidad metrológica requerida por la norma.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TIMELINE -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⟳ Flujo de la NC</div>
+            </div>
+            <div class="card-body">
+              <div class="timeline" id="nc-timeline">
+                <div class="tl-item">
+                  <div class="tl-dot done"></div>
+                  <div class="tl-label">NC Registrada</div>
+                  <div class="tl-meta">03/04/2026 · Sistema</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot active" id="tl-analysis-dot"></div>
+                  <div class="tl-label" id="tl-analysis-label">Análisis IA</div>
+                  <div class="tl-meta" id="tl-analysis-meta">Pendiente</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot" id="tl-plan-dot"></div>
+                  <div class="tl-label">Plan de acción</div>
+                  <div class="tl-meta" id="tl-plan-meta">Esperando análisis</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot"></div>
+                  <div class="tl-label">Verificación</div>
+                  <div class="tl-meta">Pendiente</div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot"></div>
+                  <div class="tl-label">Cierre</div>
+                  <div class="tl-meta">Pendiente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: AI PANEL -->
+        <div>
+          <div class="ai-panel">
+            <div class="ai-header">
+              <div class="ai-mark">IA</div>
+              <div>
+                <div class="ai-title">Asistente NormaAI</div>
+                <div class="ai-sub">Metodología 5 Porqués · ISO 9001</div>
+              </div>
+            </div>
+
+            <!-- Progress 5 whys -->
+            <div class="progress-5why" id="progress-5why" style="display:none">
+              <div class="why-step" id="ws1"></div>
+              <div class="why-step" id="ws2"></div>
+              <div class="why-step" id="ws3"></div>
+              <div class="why-step" id="ws4"></div>
+              <div class="why-step" id="ws5"></div>
+              <span class="why-label" id="why-label">¿Por qué 1/5?</span>
+            </div>
+
+            <!-- Chat messages -->
+            <div class="chat-messages" id="chat-messages">
+              <div style="text-align:center;padding:32px 16px;color:var(--ink-3)">
+                <div style="font-size:22px;margin-bottom:10px;opacity:0.35">◎</div>
+                <div style="font-size:12px;font-style:italic">Presiona <strong style="color:var(--ink-2)">Iniciar análisis</strong> para que el asistente te guíe con la metodología de los 5 Porqués.</div>
+              </div>
+            </div>
+
+            <!-- Quick replies -->
+            <div class="quick-replies" id="quick-replies" style="display:none"></div>
+
+            <!-- Input -->
+            <div class="chat-input-area" id="chat-input-area" style="display:none">
+              <input class="chat-text-input" id="chat-text" placeholder="Escribe tu respuesta..." />
+              <button class="chat-send-btn" id="chat-send" onclick="sendUserMessage()">→</button>
+            </div>
+
+            <!-- Start button -->
+            <div class="ai-footer" id="ai-footer">
+              <button class="btn-analyze" id="btn-analyze" onclick="startAnalysis()">
+                <span>◎</span> Iniciar análisis 5 Porqués
+              </button>
+            </div>
+            <div id="pdf-footer" style="display:none;padding:0 12px 12px">
+              <button class="btn-pdf" onclick="exportPDF()">
+                ↓ Descargar Plan de Acción PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW: NUEVA NC -->
+    <div class="view" id="view-nueva">
+      <button class="back-btn" onclick="showView('lista', document.querySelector('.nav-item:nth-child(2)'))">← Volver a lista</button>
+
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-title">Registrar No Conformidad</div>
+          <div class="form-sub">ISO 9001:2015 · Los campos marcados son obligatorios</div>
+        </div>
+        <div class="form-body">
+
+          <div class="form-group">
+            <label class="form-label">Descripción del hallazgo *</label>
+            <textarea class="field-textarea" rows="4" id="new-desc" placeholder="Describe con precisión qué se encontró, dónde y cuándo. Ej: 'El procedimiento PR-004 no ha sido revisado desde 2022, incumpliendo el ciclo de revisión anual...'"></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="form-group">
+              <label class="form-label">Cláusula ISO 9001 *</label>
+              <select class="field-select" id="new-clause">
+                <option value="">Seleccionar cláusula...</option>
+                <optgroup label="4 · Contexto de la organización">
+                  <option>4.1 · Comprensión de la organización y de su contexto</option>
+                  <option>4.2 · Comprensión de las necesidades y expectativas de las partes interesadas</option>
+                  <option>4.3 · Determinación del alcance del SGC</option>
+                  <option>4.4 · Sistema de gestión de la calidad y sus procesos</option>
+                </optgroup>
+                <optgroup label="5 · Liderazgo">
+                  <option>5.1.1 · Liderazgo y compromiso — Generalidades</option>
+                  <option>5.1.2 · Enfoque al cliente</option>
+                  <option>5.2.1 · Establecimiento de la política de la calidad</option>
+                  <option>5.2.2 · Comunicación de la política de la calidad</option>
+                  <option>5.3 · Roles, responsabilidades y autoridades</option>
+                </optgroup>
+                <optgroup label="6 · Planificación">
+                  <option>6.1 · Acciones para abordar riesgos y oportunidades</option>
+                  <option>6.2 · Objetivos de la calidad y planificación para lograrlos</option>
+                  <option>6.3 · Planificación de los cambios</option>
+                </optgroup>
+                <optgroup label="7 · Apoyo">
+                  <option>7.1.1 · Recursos — Generalidades</option>
+                  <option>7.1.2 · Personas</option>
+                  <option>7.1.3 · Infraestructura</option>
+                  <option>7.1.4 · Ambiente para la operación de los procesos</option>
+                  <option>7.1.5 · Recursos de seguimiento y medición</option>
+                  <option>7.1.6 · Conocimientos de la organización</option>
+                  <option>7.2 · Competencia</option>
+                  <option>7.3 · Toma de conciencia</option>
+                  <option>7.4 · Comunicación</option>
+                  <option>7.5.1 · Información documentada — Generalidades</option>
+                  <option>7.5.2 · Creación y actualización</option>
+                  <option>7.5.3 · Control de la información documentada</option>
+                </optgroup>
+                <optgroup label="8 · Operación">
+                  <option>8.1 · Planificación y control operacional</option>
+                  <option>8.2.1 · Comunicación con el cliente</option>
+                  <option>8.2.2 · Determinación de requisitos para productos y servicios</option>
+                  <option>8.2.3 · Revisión de los requisitos para productos y servicios</option>
+                  <option>8.2.4 · Cambios en los requisitos para productos y servicios</option>
+                  <option>8.3.1 · Diseño y desarrollo — Generalidades</option>
+                  <option>8.3.2 · Planificación del diseño y desarrollo</option>
+                  <option>8.3.3 · Entradas para el diseño y desarrollo</option>
+                  <option>8.3.4 · Controles del diseño y desarrollo</option>
+                  <option>8.3.5 · Salidas del diseño y desarrollo</option>
+                  <option>8.3.6 · Cambios del diseño y desarrollo</option>
+                  <option>8.4.1 · Control de procesos externos — Generalidades</option>
+                  <option>8.4.2 · Tipo y alcance del control externo</option>
+                  <option>8.4.3 · Información para los proveedores externos</option>
+                  <option>8.5.1 · Control de la producción y provisión del servicio</option>
+                  <option>8.5.2 · Identificación y trazabilidad</option>
+                  <option>8.5.3 · Propiedad de clientes o proveedores externos</option>
+                  <option>8.5.4 · Preservación</option>
+                  <option>8.5.5 · Actividades posteriores a la entrega</option>
+                  <option>8.5.6 · Control de los cambios</option>
+                  <option>8.6 · Liberación de los productos y servicios</option>
+                  <option>8.7 · Control de las salidas no conformes</option>
+                </optgroup>
+                <optgroup label="9 · Evaluación del desempeño">
+                  <option>9.1.1 · Seguimiento, medición, análisis y evaluación — Generalidades</option>
+                  <option>9.1.2 · Satisfacción del cliente</option>
+                  <option>9.1.3 · Análisis y evaluación</option>
+                  <option>9.2 · Auditoría interna</option>
+                  <option>9.3.1 · Revisión por la dirección — Generalidades</option>
+                  <option>9.3.2 · Entradas de la revisión por la dirección</option>
+                  <option>9.3.3 · Salidas de la revisión por la dirección</option>
+                </optgroup>
+                <optgroup label="10 · Mejora">
+                  <option>10.1 · Generalidades</option>
+                  <option>10.2 · No conformidad y acción correctiva</option>
+                  <option>10.3 · Mejora continua</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prioridad *</label>
+              <select class="field-select" id="new-priority">
+                <option>Alta</option>
+                <option selected>Media</option>
+                <option>Baja</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Responsable *</label>
+              <input class="field-input" type="text" id="new-resp" placeholder="Nombre del responsable" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha límite</label>
+              <input class="field-input" type="date" id="new-date" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Evidencia / observación adicional</label>
+            <textarea class="field-textarea" rows="2" placeholder="Documentos, fotos, registros relacionados..."></textarea>
+          </div>
+
+        </div>
+        <div class="form-footer">
+          <button class="btn-ghost" onclick="showView('lista', document.querySelector('.nav-item:nth-child(2)'))">Cancelar</button>
+          <button class="btn-primary" onclick="saveNC()">Registrar y analizar con IA →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── DATA ───────────────────────────────────────────────────
+  const ncs = {
+    'NC-2026-003': {
+      title: 'NC-2026-003',
+      sub: 'Registros de calibración sin actualizar · Cláusula 7.1.5',
+      clause: '7.1.5',
+      resp: 'J. Fernández',
+      date: '03/04/2026',
+      priority: 'Alta',
+      priorityClass: 'p-alta',
+      status: 'Abierta',
+      statusClass: 'tag-open',
+      desc: 'Los registros de calibración de los equipos de medición del área de producción no han sido actualizados en los últimos 6 meses. Se detectaron 4 equipos con certificados vencidos. Esto compromete la trazabilidad metrológica requerida por la norma.',
+      analyzed: false
+    },
+    'NC-2026-002': {
+      title: 'NC-2026-002',
+      sub: 'Procedimiento de control de documentos desactualizado · Cláusula 7.5',
+      clause: '7.5',
+      resp: 'M. González',
+      date: '15/03/2026',
+      priority: 'Media',
+      priorityClass: 'p-media',
+      status: 'En análisis',
+      statusClass: 'tag-analysis',
+      desc: 'El procedimiento PR-002 "Control de Información Documentada" se encuentra en versión 2019. No ha sido revisado ni actualizado conforme al ciclo de revisión anual establecido en el SGC.',
+      analyzed: false
+    },
+    'NC-2026-001': {
+      title: 'NC-2026-001',
+      sub: 'Encuesta satisfacción clientes no ejecutada · Cláusula 9.1.2',
+      clause: '9.1.2',
+      resp: 'A. Morales',
+      date: '10/02/2026',
+      priority: 'Baja',
+      priorityClass: 'p-baja',
+      status: 'Cerrada',
+      statusClass: 'tag-closed',
+      desc: 'La encuesta de satisfacción de clientes correspondiente al Q4 2025 no fue ejecutada dentro del plazo establecido en el procedimiento PR-009. El período de medición venció el 31 de enero de 2026 sin que se emitiera el instrumento.',
+      analyzed: false
+    }
+  };
+
+  // ─── STATE ──────────────────────────────────────────────────
+  let currentNC = 'NC-2026-003';
+  let chatHistory = [];
+  let flowStep = 0; // 0=init 1=correccion 2=inicial 3-7=porques 8=acciones 9=verificacion 10=riesgos 11=cambios 12=final
+  let whyAnswers = [];
+  let allAnswers = {}; // stores all step answers
+  let analysisStarted = false;
+  let waitingForInput = false;
+  let quickReplyOptions = [];
+
+  // ─── NAVIGATION ─────────────────────────────────────────────
+  function showView(name, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+
+  function openDetail(code) {
+    currentNC = code;
+    const nc = ncs[code];
+    if (!nc) return;
+
+    document.getElementById('detail-title').textContent = nc.title;
+    document.getElementById('detail-sub').textContent = nc.sub;
+    document.getElementById('d-code').textContent = nc.title;
+    document.getElementById('d-clause').textContent = nc.clause;
+    document.getElementById('d-resp').textContent = nc.resp;
+    document.getElementById('d-date').textContent = nc.date;
+    document.getElementById('d-desc').textContent = nc.desc;
+
+    const statusEl = document.getElementById('detail-status');
+    statusEl.className = 'status-tag ' + nc.statusClass;
+    statusEl.innerHTML = `<span class="dot"></span>${nc.status}`;
+
+    const prioEl = document.getElementById('detail-priority');
+    prioEl.className = 'priority-tag ' + nc.priorityClass;
+    prioEl.textContent = nc.priority;
+
+    // Reset chat
+    resetChat();
+
+    // Timeline
+    if (nc.analyzed) {
+      document.getElementById('tl-analysis-dot').className = 'tl-dot done';
+      document.getElementById('tl-analysis-meta').textContent = 'Completado';
+      document.getElementById('tl-plan-dot').className = 'tl-dot active';
+      document.getElementById('tl-plan-meta').textContent = 'Plan generado';
+    } else {
+      document.getElementById('tl-analysis-dot').className = 'tl-dot active';
+      document.getElementById('tl-analysis-meta').textContent = 'Pendiente';
+      document.getElementById('tl-plan-dot').className = 'tl-dot';
+      document.getElementById('tl-plan-meta').textContent = 'Esperando análisis';
+    }
+
+    // Switch to detail view without breaking nav
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-detail').classList.add('active');
+  }
+
+  function resetChat() {
+    chatHistory = [];
+    flowStep = 0;
+    whyAnswers = [];
+    allAnswers = {};
+    analysisStarted = false;
+    waitingForInput = false;
+
+    document.getElementById('chat-messages').innerHTML = `
+      <div style="text-align:center;padding:32px 16px;color:var(--ink-3)">
+        <div style="font-size:22px;margin-bottom:10px;opacity:0.35">◎</div>
+        <div style="font-size:12px;font-style:italic">Presiona <strong style="color:var(--ink-2)">Iniciar análisis</strong> para guiarte por el flujo completo de NC según cláusula 10.2 de ISO 9001:2015.</div>
+      </div>`;
+    document.getElementById('quick-replies').style.display = 'none';
+    document.getElementById('quick-replies').innerHTML = '';
+    document.getElementById('chat-input-area').style.display = 'none';
+    document.getElementById('ai-footer').style.display = 'flex';
+    document.getElementById('pdf-footer').style.display = 'none';
+    document.getElementById('progress-5why').style.display = 'none';
+    document.getElementById('btn-analyze').innerHTML = '<span>◎</span> Iniciar análisis · Cláusula 10.2';
+    document.getElementById('btn-analyze').disabled = false;
+    updateWhyProgress(0);
+  }
+
+  function updateWhyProgress(step) {
+    // step: 0=none, 1=corrección, 2=causa raíz (5 porqués), 3=acciones, 4=verificación, 5=riesgos+SGC, 6=completo
+    for (let i = 1; i <= 5; i++) {
+      const el = document.getElementById('ws' + i);
+      if (!el) continue;
+      if (i < step) el.className = 'why-step done';
+      else if (i === step) el.className = 'why-step active';
+      else el.className = 'why-step';
+    }
+    const label = document.getElementById('why-label');
+    if (!label) return;
+    const labels = ['', 'Corrección', 'Causa raíz', 'Acciones', 'Verificación', 'SGC', '✓ Completo'];
+    label.textContent = labels[Math.min(step, 6)] || '10.2.1';
+  }
+
+  // ─── CHAT HELPERS ────────────────────────────────────────────
+  function appendAIMessage(html, badge) {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ai';
+    div.innerHTML = `
+      <div class="chat-avatar">IA</div>
+      <div class="chat-bubble">
+        ${badge ? `<div class="why-badge">${badge}</div>` : ''}
+        ${html}
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendUserMessage(text) {
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg user';
+    div.innerHTML = `
+      <div class="chat-avatar">tú</div>
+      <div class="chat-bubble">${text}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('chat-messages');
+    const id = 'typing-' + Date.now();
+    const div = document.createElement('div');
+    div.className = 'chat-msg ai typing-row';
+    div.id = id;
+    div.innerHTML = `
+      <div class="chat-avatar">IA</div>
+      <div class="typing-dots">
+        <div class="td"></div><div class="td"></div><div class="td"></div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+
+  function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function showQuickReplies(options) {
+    quickReplyOptions = options;
+    const qr = document.getElementById('quick-replies');
+    qr.style.display = 'flex';
+    qr.innerHTML = options.map((o, i) =>
+      `<button class="qr-btn" onclick="selectQuickReply(${i})">${o}</button>`
+    ).join('');
+  }
+
+  function hideQuickReplies() {
+    document.getElementById('quick-replies').style.display = 'none';
+    document.getElementById('quick-replies').innerHTML = '';
+  }
+
+  function showInputArea() {
+    document.getElementById('chat-input-area').style.display = 'flex';
+    document.getElementById('chat-text').focus();
+    waitingForInput = true;
+  }
+
+  function hideInputArea() {
+    document.getElementById('chat-input-area').style.display = 'none';
+    waitingForInput = false;
+  }
+
+  function selectQuickReply(idx) {
+    const text = quickReplyOptions[idx];
+    hideQuickReplies();
+    hideInputArea();
+    processUserInput(text);
+  }
+
+  function sendUserMessage() {
+    const input = document.getElementById('chat-text');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    hideQuickReplies();
+    hideInputArea();
+    processUserInput(text);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('chat-text');
+    if (input) {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendUserMessage();
+      });
+    }
+  });
+
+  function updateWhyProgress(step) {
+    for (let i = 1; i <= 5; i++) {
+      const el = document.getElementById('ws' + i);
+      if (!el) continue;
+      if (i < step) el.className = 'why-step done';
+      else if (i === step) el.className = 'why-step active';
+      else el.className = 'why-step';
+    }
+    const label = document.getElementById('why-label');
+    if (label) {
+      if (step === 0) label.textContent = '5 Porqués';
+      else if (step <= 5) label.textContent = `¿Por qué? ${step}/5`;
+      else label.textContent = '✓ Completo';
+    }
+  }
+
+  // ─── SYSTEM PROMPT ───────────────────────────────────────────
+  function buildSystemPrompt(nc) {
+    return `Eres NormaAI, un asistente experto en ISO 9001:2015 especializado en análisis de No Conformidades con la metodología de los 5 Porqués.
+
+Tu rol es DIALOGAR con el responsable de calidad para guiarlo a identificar la causa raíz real de una NC. No das la respuesta directamente — preguntas, escuchas y profundizas.
+
+NC en análisis:
+- Código: ${nc.title}
+- Cláusula ISO 9001: ${nc.clause}
+- Descripción: ${nc.desc}
+- Responsable: ${nc.resp}
+
+FLUJO DE LA CONVERSACIÓN (cláusula 10.2.1 ISO 9001:2015):
+1. CORRECCIÓN INMEDIATA: Pregunta qué acción inmediata se tomó o se tomará para contener la NC (corrección, no la causa raíz)
+2. PREGUNTA INICIAL causa: dónde cree el usuario que está el origen principal
+3. 5 PORQUÉS en secuencia para llegar a la causa raíz
+4. ACCIONES CORRECTIVAS: propón 3 acciones para eliminar la causa raíz
+5. VERIFICACIÓN DE EFICACIA: pregunta cómo se verificará que las acciones fueron eficaces (indicador, plazo, responsable)
+6. RIESGOS Y OPORTUNIDADES: pregunta si esta NC revela un riesgo no identificado o una oportunidad de mejora (cláusula 6.1)
+7. CAMBIOS AL SGC: pregunta si es necesario hacer cambios al sistema de gestión (procedimientos, políticas, objetivos)
+8. RESULTADO FINAL: sintetiza todo
+
+REGLAS:
+- Responde SIEMPRE en JSON válido con esta estructura:
+{
+  "mensaje": "texto al usuario (HTML básico permitido)",
+  "tipo": "correccion | pregunta_inicial | porque_1 | porque_2 | porque_3 | porque_4 | porque_5 | acciones | verificacion | riesgos | cambios_sgc | resultado_final",
+  "sugerencias": ["opción 1", "opción 2", "opción 3"]
+}
+- En resultado_final agrega además: "causa_raiz" (string), "acciones" (array 3 strings), "correccion" (string), "verificacion" (string), "riesgos" (string), "cambios_sgc" (string)
+- Sé conciso: máximo 2-3 oraciones por mensaje
+- Nunca inventes datos que no hayan surgido del diálogo`;
+  }
+
+  // ─── START ───────────────────────────────────────────────────
+  async function startAnalysis() {
+    const nc = ncs[currentNC];
+    analysisStarted = true;
+    flowStep = 1;
+
+    document.getElementById('ai-footer').style.display = 'none';
+    document.getElementById('progress-5why').style.display = 'flex';
+    document.getElementById('chat-messages').innerHTML = '';
+    updateWhyProgress(1);
+
+    const typId = showTyping();
+    chatHistory = [];
+
+    const firstPrompt = `Inicia el flujo. Primero pregunta por la CORRECCIÓN INMEDIATA (tipo: "correccion"): ¿qué acción inmediata se tomó o se tomará para contener esta NC mientras se investiga la causa raíz? Da 3 sugerencias concretas.`;
+
+    const result = await callAI(buildSystemPrompt(nc), firstPrompt);
+    removeTyping(typId);
+
+    if (result) {
+      handleAIResponse(result, nc);
+    } else {
+      handleAIResponse({
+        mensaje: `Iniciemos el análisis de <strong>${nc.title}</strong> según la cláusula 10.2 de ISO 9001:2015.<br><br><strong>Paso 1 — Corrección inmediata:</strong> ¿Qué acción se tomó o tomará de inmediato para contener esta no conformidad mientras se investiga su causa raíz?`,
+        tipo: 'correccion',
+        sugerencias: ['Segregar y detener el proceso afectado', 'Notificar al área responsable y suspender temporalmente', 'Revisar manualmente los registros afectados', 'Aplicar control de producto no conforme (cláusula 8.7)']
+      }, nc);
+    }
+  }
+
+  // ─── PROCESS USER INPUT ──────────────────────────────────────
+  async function processUserInput(text) {
+    appendUserMessage(text);
+    chatHistory.push({ role: 'user', content: text });
+
+    const nc = ncs[currentNC];
+    const typId = showTyping();
+    let instruction = '';
+
+    if (flowStep === 1) {
+      // Corrección dada → primer porqué directamente
+      allAnswers.correccion = text;
+      flowStep = 3; // saltamos directo al porqué 1
+      whyAnswers.push(''); // placeholder para alinear índices
+      updateWhyProgress(2);
+      instruction = `Corrección recibida: "${text}". Ahora aplica el PRIMER PORQUÉ (tipo: "porque_1") directamente sobre la NC descrita. Pregunta por qué ocurrió esta no conformidad. Da 3-4 sugerencias concretas al contexto.`;
+
+    } else if (flowStep >= 3 && flowStep <= 6) {
+      // Porqués 1 a 4 → siguiente porqué
+      whyAnswers.push(text);
+      const porqueActual = flowStep - 2; // 1,2,3,4
+      flowStep++;
+      instruction = `Porqué ${porqueActual} respondido: "${text}". Aplica el PORQUÉ NÚMERO ${porqueActual + 1} (tipo: "porque_${porqueActual + 1}"). Profundiza. Da sugerencias si aplica.`;
+
+    } else if (flowStep === 7) {
+      // Porqué 5 → acciones correctivas
+      whyAnswers.push(text);
+      allAnswers.whyAnswers = whyAnswers.filter(w => w);
+      flowStep = 8;
+      updateWhyProgress(3);
+      instruction = `Porqué 5 respondido: "${text}". Ya tienes la causa raíz. Sintetízala brevemente y propón 3 ACCIONES CORRECTIVAS (tipo: "acciones") concretas para eliminarla. Da sugerencias.`;
+
+    } else if (flowStep === 8) {
+      // Acciones → verificación de eficacia
+      allAnswers.acciones = text;
+      flowStep = 9;
+      updateWhyProgress(4);
+      instruction = `Acciones acordadas: "${text}". Ahora pregunta VERIFICACIÓN DE EFICACIA (tipo: "verificacion", cláusula 10.2.1.d): ¿cómo y cuándo se verificará que las acciones fueron eficaces? Da 3 sugerencias.`;
+
+    } else if (flowStep === 9) {
+      // Verificación → riesgos y oportunidades
+      allAnswers.verificacion = text;
+      flowStep = 10;
+      updateWhyProgress(5);
+      instruction = `Verificación: "${text}". Pregunta RIESGOS Y OPORTUNIDADES (tipo: "riesgos", cláusula 6.1): ¿esta NC revela un riesgo no identificado o una oportunidad de mejora? Da 3 sugerencias.`;
+
+    } else if (flowStep === 10) {
+      // Riesgos → cambios al SGC
+      allAnswers.riesgos = text;
+      flowStep = 11;
+      instruction = `Riesgos/oportunidades: "${text}". Pregunta CAMBIOS AL SGC (tipo: "cambios_sgc", cláusula 10.2.1.f): ¿requiere actualizar procedimientos, políticas u objetivos? Da 3 sugerencias.`;
+
+    } else if (flowStep === 11) {
+      // Cambios SGC → resultado final
+      allAnswers.cambios_sgc = text;
+      flowStep = 12;
+      updateWhyProgress(6);
+      instruction = `Cambios SGC: "${text}". Genera el RESULTADO FINAL (tipo: "resultado_final") con resumen ejecutivo. Incluye: causa_raiz (string), acciones (array 3 strings), correccion (string), verificacion (string), riesgos (string), cambios_sgc (string).`;
+    }
+
+    chatHistory.push({ role: 'assistant', content: instruction });
+
+    const result = await callAI(buildSystemPrompt(nc), instruction, chatHistory.slice(-6));
+    removeTyping(typId);
+
+    if (result) {
+      handleAIResponse(result, nc);
+    } else {
+      handleFallback(flowStep, nc);
+    }
+  }
+
+  // ─── HANDLE AI RESPONSE ──────────────────────────────────────
+  function handleAIResponse(data, nc) {
+    const { mensaje, tipo, sugerencias = [], acciones = [], causa_raiz, correccion, verificacion, riesgos, cambios_sgc } = data;
+
+    if (tipo === 'resultado_final') {
+      appendAIMessage(mensaje);
+      renderFinalResult({ causa_raiz, acciones, correccion, verificacion, riesgos, cambios_sgc });
+      nc.analyzed = true;
+      nc.finalData = {
+        causa_raiz: causa_raiz || whyAnswers[whyAnswers.length-1],
+        acciones: acciones || [],
+        correccion: correccion || allAnswers.correccion || '',
+        verificacion: verificacion || allAnswers.verificacion || '',
+        riesgos: riesgos || allAnswers.riesgos || '',
+        cambios_sgc: cambios_sgc || allAnswers.cambios_sgc || '',
+        whyAnswers: [...whyAnswers]
+      };
+      document.getElementById('tl-analysis-dot').className = 'tl-dot done';
+      document.getElementById('tl-analysis-meta').textContent = 'Análisis 10.2 completado';
+      document.getElementById('tl-plan-dot').className = 'tl-dot done';
+      document.getElementById('tl-plan-meta').textContent = 'Plan de acción generado';
+      updateWhyProgress(6);
+      document.getElementById('why-label').textContent = '✓ Completo';
+      document.getElementById('pdf-footer').style.display = 'block';
+      return;
+    }
+
+    const badgeMap = {
+      'correccion':    '① Corrección inmediata',
+      'pregunta_inicial': '② Origen de la NC',
+      'porque_1':     '③ ¿Por qué? 1/5',
+      'porque_2':     '③ ¿Por qué? 2/5',
+      'porque_3':     '③ ¿Por qué? 3/5',
+      'porque_4':     '③ ¿Por qué? 4/5',
+      'porque_5':     '③ ¿Por qué? 5/5',
+      'acciones':     '④ Acciones correctivas',
+      'verificacion': '⑤ Verificación de eficacia',
+      'riesgos':      '⑥ Riesgos y oportunidades',
+      'cambios_sgc':  '⑦ Cambios al SGC'
+    };
+
+    appendAIMessage(mensaje, badgeMap[tipo] || null);
+
+    if (sugerencias && sugerencias.length > 0) showQuickReplies(sugerencias);
+    showInputArea();
+  }
+
+  function renderFinalResult(data) {
+    const { causa_raiz, acciones = [], correccion, verificacion, riesgos, cambios_sgc } = data;
+    const msgs = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'final-result-card';
+
+    const seccion = (label, valor, color) => valor ? `
+      <div style="margin-bottom:10px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:${color};margin-bottom:4px">${label}</div>
+        <div style="font-size:12px;color:var(--ink-2);padding:8px 10px;background:white;border-radius:6px;border:1px solid var(--border);line-height:1.5">${valor}</div>
+      </div>` : '';
+
+    div.innerHTML = `
+      ${seccion('① Corrección inmediata', correccion, 'var(--warn)')}
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--danger);margin-bottom:4px">③ Causa raíz identificada</div>
+      <div class="final-causa">${causa_raiz || 'Causa raíz identificada a partir del análisis.'}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--accent);margin-bottom:6px;text-transform:uppercase;margin-top:10px">④ Acciones correctivas</div>
+      ${acciones.map((a, i) => `<div class="accion-mini"><div class="accion-mini-num">A${i+1}</div><div>${a}</div></div>`).join('')}
+      ${seccion('⑤ Verificación de eficacia', verificacion, 'var(--success)')}
+      ${seccion('⑥ Riesgos y oportunidades (6.1)', riesgos, 'var(--ink-3)')}
+      ${seccion('⑦ Cambios al SGC', cambios_sgc, 'var(--accent)')}
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ─── API CALL ────────────────────────────────────────────────
+  async function callAI(systemPrompt, userMsg, history = []) {
+    const messages = [
+      ...history.filter(m => m.role === 'user' || m.role === 'assistant').slice(-4),
+      { role: 'user', content: userMsg }
+    ];
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages
+        })
+      });
+
+      if (!response.ok) throw new Error('API error');
+
+      const data = await response.json();
+      let text = data.content?.[0]?.text || '{}';
+      text = text.replace(/```json|```/g, '').trim();
+      return JSON.parse(text);
+    } catch(e) {
+      // Return null to trigger fallback
+      return null;
+    }
+  }
+
+  // ─── FALLBACKS ───────────────────────────────────────────────
+  const fallbackFlow = {
+    3:  { mensaje: '¿Por qué ocurrió esta no conformidad?', sugerencias: ['No hay alerta ni recordatorio definido', 'El responsable no tenía claridad del requisito', 'Faltó seguimiento periódico', 'No estaba asignada la responsabilidad'] },
+    4:  { mensaje: '¿Y por qué ocurre eso? ¿Qué falló específicamente?', sugerencias: ['No hay procedimiento definido', 'El procedimiento existe pero no se cumple', 'Falta supervisión del proceso'] },
+    5:  { mensaje: '¿Por qué no existe ese control o no se cumple?', sugerencias: ['Nunca se estableció formalmente', 'Se perdió con cambio de personal', 'No está integrado al SGC'] },
+    6:  { mensaje: '¿Por qué no se estableció o mantuvo ese control?', sugerencias: ['No hay dueño de proceso asignado', 'La dirección no lo priorizó', 'Faltó revisión por la dirección'] },
+    7:  { mensaje: '¿Cuál es la razón de fondo? ¿Por qué esto no fue prioritario?', sugerencias: ['Cultura reactiva, no preventiva', 'SGC no integrado a la operación real', 'Falta de métricas de seguimiento'] },
+    8:  { mensaje: '¿Cuáles serían las 3 acciones correctivas para eliminar esta causa raíz?', sugerencias: ['Implementar sistema de alertas automáticas', 'Asignar responsable formal con revisión mensual', 'Actualizar procedimiento e integrar al SGC'] },
+    9:  { mensaje: '¿Cómo y cuándo se verificará que las acciones fueron eficaces? (cláusula 10.2.1.d)', sugerencias: ['Auditoría interna en 90 días', 'Indicador mensual por 3 meses', 'Revisión en próxima reunión de dirección'] },
+    10: { mensaje: '¿Esta NC revela algún riesgo no identificado o una oportunidad de mejora? (cláusula 6.1)', sugerencias: ['Riesgo de recurrencia en procesos similares', 'Oportunidad de automatizar el control', 'Sin riesgos adicionales identificados'] },
+    11: { mensaje: '¿Es necesario hacer cambios al SGC? Por ejemplo: actualizar procedimientos o políticas. (cláusula 10.2.1.f)', sugerencias: ['Actualizar procedimiento relacionado', 'Incorporar indicador en el cuadro de mando', 'No se requieren cambios al SGC'] }
+  };
+
+  function handleFallback(step, nc) {
+    if (step >= 12) {
+      const fd = allAnswers;
+      const cleanWhys = whyAnswers.filter(w => w);
+      handleAIResponse({
+        mensaje: 'He completado el análisis completo según cláusula 10.2.1 de ISO 9001:2015.',
+        tipo: 'resultado_final',
+        causa_raiz: cleanWhys[cleanWhys.length - 1] || 'Ausencia de controles formales integrados al SGC',
+        acciones: [
+          'Implementar alertas automáticas 30 días antes del vencimiento.',
+          'Designar responsable formal con revisión mensual documentada.',
+          'Integrar al ciclo de revisión por la dirección (cláusula 9.3).'
+        ],
+        correccion: fd.correccion || '',
+        verificacion: fd.verificacion || 'Auditoría interna en 90 días',
+        riesgos: fd.riesgos || 'Riesgo de recurrencia en procesos similares',
+        cambios_sgc: fd.cambios_sgc || 'Actualización de procedimiento requerida'
+      }, nc);
+    } else {
+      const fb = fallbackFlow[step];
+      if (!fb) return;
+      const porqueNum = step - 2; // 3→1, 4→2 ... 7→5
+      const badge = (step >= 3 && step <= 7) ? `③ ¿Por qué? ${porqueNum}/5` : null;
+      appendAIMessage(fb.mensaje, badge);
+      showQuickReplies(fb.sugerencias);
+      showInputArea();
+    }
+  }
+
+  // ─── PDF EXPORT ──────────────────────────────────────────────
+  function exportPDF() {
+    const nc = ncs[currentNC];
+    const fd = nc.finalData || {};
+    const acciones = fd.acciones || [];
+    const causaRaiz = fd.causa_raiz || 'Identificada mediante metodología 5 Porqués';
+    const whys = fd.whyAnswers || whyAnswers;
+    const fecha = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const porqueRows = whys.map((w, i) => `
+      <tr>
+        <td style="width:90px;font-weight:600;color:#1d4ed8;padding:8px 12px;border:1px solid #e2dfd8;background:#eff3ff;vertical-align:top">¿Por qué ${i+1}?</td>
+        <td style="padding:8px 12px;border:1px solid #e2dfd8">${w}</td>
+      </tr>`).join('');
+
+    const accionRows = acciones.map((a, i) => `
+      <tr>
+        <td style="width:36px;text-align:center;font-weight:700;color:#1d4ed8;padding:8px;border:1px solid #e2dfd8;background:#eff3ff;vertical-align:top">A${i+1}</td>
+        <td style="padding:8px 12px;border:1px solid #e2dfd8">${a}</td>
+      </tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Plan de Acción · ${nc.title}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; font-size:12px; color:#1a1916; background:white; padding:40px; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding-bottom:16px; border-bottom:2px solid #1d4ed8; }
+  .brand { font-size:20px; font-weight:700; color:#1d4ed8; }
+  .doc-meta { text-align:right; font-size:10px; color:#8a8780; line-height:1.7; }
+  h1 { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .subtitle { font-size:12px; color:#4a4842; margin-bottom:24px; }
+  .section { margin-bottom:18px; }
+  .section-title { font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#8a8780; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid #e2dfd8; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:1px; background:#e2dfd8; border:1px solid #e2dfd8; margin-bottom:18px; }
+  .info-cell { background:white; padding:10px 12px; }
+  .info-label { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#8a8780; margin-bottom:3px; }
+  .info-value { font-size:12px; font-weight:500; }
+  .box { padding:10px 14px; border-radius:4px; line-height:1.6; font-size:12px; border:1px solid; }
+  .box-blue { background:#eff3ff; border-color:#bfcfff; border-left:3px solid #1d4ed8; }
+  .box-amber { background:#fffbeb; border-color:#fcd34d; border-left:3px solid #b45309; }
+  .box-red { background:#fff5f5; border-color:#fca5a5; border-left:3px solid #b91c1c; }
+  .box-green { background:#f0fdf4; border-color:#86efac; border-left:3px solid #15803d; }
+  .box-gray { background:#f7f6f2; border-color:#e2dfd8; border-left:3px solid #8a8780; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:8px 12px; background:#1a1916; color:white; text-align:left; font-size:10px; letter-spacing:0.5px; }
+  td { padding:8px 12px; border:1px solid #e2dfd8; vertical-align:top; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10px; font-weight:600; }
+  .badge-alta { background:#fff5f5; color:#b91c1c; border:1px solid #fca5a5; }
+  .badge-media { background:#fffbeb; color:#b45309; border:1px solid #fcd34d; }
+  .badge-baja { background:#f0fdf4; color:#15803d; border:1px solid #86efac; }
+  .sign-area { margin-top:36px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; }
+  .sign-box { border-top:1px solid #c8c4bc; padding-top:8px; text-align:center; font-size:10px; color:#8a8780; line-height:1.8; }
+  .footer { margin-top:20px; padding-top:10px; border-top:1px solid #e2dfd8; display:flex; justify-content:space-between; font-size:9px; color:#8a8780; }
+  @media print { body { padding:20px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">Norma<span style="color:#1a1916">AI</span></div>
+    <div style="font-size:10px;color:#8a8780;margin-top:2px">Gestión de No Conformidades · ISO 9001:2015</div>
+  </div>
+  <div class="doc-meta">
+    <div><strong>Código NC:</strong> ${nc.title}</div>
+    <div><strong>Fecha:</strong> ${fecha}</div>
+    <div><strong>Cláusula:</strong> ${nc.clause} · Acción correctiva: 10.2</div>
+  </div>
+</div>
+
+<h1>Plan de Acción Correctiva</h1>
+<div class="subtitle">${nc.sub}</div>
+
+<div class="section">
+  <div class="section-title">Datos de la No Conformidad</div>
+  <div class="info-grid">
+    <div class="info-cell"><div class="info-label">Código NC</div><div class="info-value">${nc.title}</div></div>
+    <div class="info-cell"><div class="info-label">Cláusula ISO 9001</div><div class="info-value">${nc.clause}</div></div>
+    <div class="info-cell"><div class="info-label">Responsable</div><div class="info-value">${nc.resp}</div></div>
+    <div class="info-cell"><div class="info-label">Prioridad</div><div class="info-value"><span class="badge badge-${(nc.priority||'').toLowerCase()}">${nc.priority}</span></div></div>
+  </div>
+  <div class="box box-gray">${nc.desc}</div>
+</div>
+
+${fd.correccion ? `<div class="section">
+  <div class="section-title">① Corrección Inmediata · Cláusula 10.2.1.a</div>
+  <div class="box box-amber">${fd.correccion}</div>
+</div>` : ''}
+
+${whys.length > 0 ? `<div class="section">
+  <div class="section-title">② Análisis de Causa Raíz · Metodología 5 Porqués · Cláusula 10.2.1.b</div>
+  <table><tbody>${porqueRows}</tbody></table>
+</div>` : ''}
+
+<div class="section">
+  <div class="section-title">③ Causa Raíz Identificada · Cláusula 10.2.1.b.2</div>
+  <div class="box box-red">${causaRaiz}</div>
+</div>
+
+<div class="section" style="margin-top:18px">
+  <div class="section-title">④ Acciones Correctivas · Cláusula 10.2.1.c</div>
+  <table>
+    <thead><tr><th style="width:36px">#</th><th>Acción Correctiva para Eliminar la Causa Raíz</th></tr></thead>
+    <tbody>${accionRows || `<tr><td colspan="2" style="color:#8a8780;font-style:italic">Sin acciones registradas</td></tr>`}</tbody>
+  </table>
+</div>
+
+${fd.verificacion ? `<div class="section">
+  <div class="section-title">⑤ Verificación de Eficacia · Cláusula 10.2.1.d</div>
+  <div class="box box-green">${fd.verificacion}</div>
+</div>` : ''}
+
+${fd.riesgos ? `<div class="section">
+  <div class="section-title">⑥ Riesgos y Oportunidades · Cláusula 6.1 / 10.2.1.e</div>
+  <div class="box box-gray">${fd.riesgos}</div>
+</div>` : ''}
+
+${fd.cambios_sgc ? `<div class="section">
+  <div class="section-title">⑦ Cambios al Sistema de Gestión · Cláusula 10.2.1.f</div>
+  <div class="box box-blue">${fd.cambios_sgc}</div>
+</div>` : ''}
+
+<div class="sign-area">
+  <div class="sign-box">Elaborado por<br><br><strong>${nc.resp}</strong><br>Responsable NC</div>
+  <div class="sign-box">Revisado por<br><br>&nbsp;<br>Jefe de Calidad</div>
+  <div class="sign-box">Aprobado por<br><br>&nbsp;<br>Representante de Dirección</div>
+</div>
+
+<div class="footer">
+  <span>Generado por NormaAI · Procesus · ${fecha}</span>
+  <span>ISO 9001:2015 · Cláusula 10.2 · Documento controlado</span>
+</div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { showToast('Permite ventanas emergentes para generar el PDF', false); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 700);
+  }
+
+  // ─── SAVE NC ────────────────────────────────────────────────
+  function saveNC() {
+    const desc = document.getElementById('new-desc').value.trim();
+    const clause = document.getElementById('new-clause').value;
+    const resp = document.getElementById('new-resp').value.trim();
+
+    if (!desc || !clause || !resp) {
+      showToast('Completa los campos obligatorios', false);
+      return;
+    }
+
+    const code = 'NC-2026-004';
+    ncs[code] = {
+      title: code,
+      sub: desc.substring(0, 50) + '… · Cláusula ' + clause.split('·')[0].trim(),
+      clause: clause.split('·')[0].trim(),
+      resp,
+      date: new Date().toLocaleDateString('es-CL'),
+      priority: document.getElementById('new-priority').value,
+      priorityClass: { Alta: 'p-alta', Media: 'p-media', Baja: 'p-baja' }[document.getElementById('new-priority').value],
+      status: 'Abierta',
+      statusClass: 'tag-open',
+      desc,
+      analyzed: false
+    };
+
+    showToast('NC registrada · iniciando análisis…', true);
+    setTimeout(() => {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-detail').classList.add('active');
+      currentNC = code;
+      const nc = ncs[code];
+      document.getElementById('detail-title').textContent = nc.title;
+      document.getElementById('detail-sub').textContent = nc.sub;
+      document.getElementById('d-code').textContent = nc.title;
+      document.getElementById('d-clause').textContent = nc.clause;
+      document.getElementById('d-resp').textContent = nc.resp;
+      document.getElementById('d-date').textContent = nc.date;
+      document.getElementById('d-desc').textContent = nc.desc;
+      document.getElementById('detail-status').className = 'status-tag tag-open';
+      document.getElementById('detail-status').innerHTML = '<span class="dot"></span>Abierta';
+      document.getElementById('detail-priority').className = 'priority-tag ' + nc.priorityClass;
+      document.getElementById('detail-priority').textContent = nc.priority;
+      document.getElementById('tl-analysis-dot').className = 'tl-dot active';
+      document.getElementById('tl-analysis-meta').textContent = 'Pendiente';
+      document.getElementById('tl-plan-dot').className = 'tl-dot';
+      document.getElementById('tl-plan-meta').textContent = 'Esperando análisis';
+      resetChat();
+    }, 400);
+  }
+
+  function showToast(msg, ok) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (ok ? ' toast-green' : '');
+    setTimeout(() => t.className = 'toast', 2800);
+  }
+</script>
+</body>
+</html>
