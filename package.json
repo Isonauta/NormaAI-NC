@@ -1,0 +1,16 @@
+{
+  "name": "norma-ai-nc",
+  "version": "1.0.0",
+  "description": "NormaAI · Gestión de No Conformidades ISO 9001/14001/45001",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
