@@ -840,6 +840,10 @@
       <button class="nav-item" onclick="showView('dashboard', this)"><span class="nav-icon">↗</span> Indicadores</button>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-label">Documentos SGC</div>
+      <button class="nav-item" onclick="showView('documentos', this)"><span class="nav-icon">📁</span> Gestor Documental<span class="nav-count purple">2</span></button>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-label">Sistema</div>
       <button class="nav-item"><span class="nav-icon">⚙</span> Configuración</button>
     </div>
@@ -979,6 +983,17 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- VIEW: DOCUMENTOS SGC -->
+    <div class="view" id="view-documentos">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Gestor Documental</div>
+          <div class="page-sub">Procedimientos del SGC disponibles para análisis IA</div>
+        </div>
+      </div>
+      <div id="docs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
     </div>
 
     <!-- NUEVA NC -->
@@ -1362,7 +1377,7 @@ Máximo 2-3 oraciones. Sé contextual y conciso.`;
   async function callAI(systemPrompt, userMsg, history=[]) {
     const messages = [...history.filter(m=>m.role==='user'||m.role==='assistant').slice(-4), {role:'user',content:userMsg}];
     try {
-      const response = await fetch('/api/analizar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({systemPrompt, userMsg, history:messages}) });
+      const response = await fetch('/api/analizar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({systemPrompt, userMsg, history:messages, incluirDocumentos: flowStep <= 3}) });
       if (!response.ok) throw new Error('API error ' + response.status);
       return await response.json();
     } catch(e) { console.warn('callAI error:', e); return null; }
@@ -1440,6 +1455,38 @@ ${fd.cambios_sgc?`<div class="section"><div class="section-title">⑦ Cambios al
     ncs[code] = { title:code, sub:desc.substring(0,50)+'… · Cláusula '+clause.split('·')[0].trim(), clause:clause.split('·')[0].trim(), resp, date:new Date().toLocaleDateString('es-CL'), priority:document.getElementById('new-priority').value, priorityClass:{Alta:'p-alta',Media:'p-media',Baja:'p-baja'}[document.getElementById('new-priority').value], status:'Abierta', statusClass:'tag-open', desc, analyzed:false };
     showToast('NC registrada · iniciando análisis…',true);
     setTimeout(()=>openDetail(code),400);
+  }
+
+  // GESTOR DOCUMENTAL
+  async function loadDocumentos() {
+    const grid = document.getElementById('docs-grid');
+    if (!grid) return;
+    try {
+      const res = await fetch('/api/documentos');
+      const data = await res.json();
+      grid.innerHTML = data.documentos.map(d => `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--purple);background:var(--purple-light);padding:3px 8px;border-radius:4px;border:1px solid var(--accent-border)">${d.codigo}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-3)">v${d.version}</div>
+          </div>
+          <div style="font-weight:500;font-size:14px;color:var(--ink);margin-bottom:6px">${d.nombre}</div>
+          <div style="font-size:11px;color:var(--ink-3);font-family:'DM Mono',monospace">Cláusula ${d.clausula}</div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
+            <span style="font-size:11px;color:var(--success)">Disponible para análisis IA</span>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      grid.innerHTML = '<div style="color:var(--ink-3);font-size:13px">No se pudieron cargar los documentos.</div>';
+    }
+  }
+
+  // Cargar documentos al mostrar esa vista
+  const origShowView = showView;
+  function showView(name, btn) {
+    origShowView(name, btn);
+    if (name === 'documentos') loadDocumentos();
   }
 
   function showToast(msg,ok) {
