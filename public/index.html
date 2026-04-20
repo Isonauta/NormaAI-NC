@@ -1336,9 +1336,27 @@ Máximo 2-3 oraciones. Sé contextual y conciso.`;
     handleAIResponse(result, nc);
   }
 
+  // Sugerencias de respaldo por tipo — se usan si la IA no las incluye
+  const sugerenciasFallback = {
+    correccion: ['Segregar y detener el proceso afectado', 'Notificar al área responsable y suspender temporalmente', 'Revisar manualmente los registros afectados', 'Aplicar control de producto no conforme (8.7)'],
+    porque_1: ['No hay alerta ni recordatorio definido', 'El responsable no tenía claridad del requisito', 'Faltó seguimiento periódico', 'Responsabilidad no asignada'],
+    porque_2: ['No hay procedimiento definido', 'El procedimiento existe pero no se cumple', 'Falta supervisión del proceso', 'Cambio de personal sin traspaso'],
+    porque_3: ['Nunca se estableció formalmente', 'Se perdió con cambio de personal', 'No está integrado al SGC', 'Falta de recursos asignados'],
+    porque_4: ['No hay dueño de proceso asignado', 'La dirección no lo priorizó', 'Faltó revisión por la dirección', 'No está en los objetivos del SGC'],
+    porque_5: ['Cultura reactiva, no preventiva', 'SGC no integrado a la operación real', 'Falta de métricas de seguimiento', 'Ausencia de mejora continua formal'],
+    acciones: ['Implementar alertas automáticas de vencimiento', 'Asignar responsable formal con revisión mensual', 'Actualizar procedimiento e integrar al SGC'],
+    verificacion: ['Auditoría interna en 90 días', 'Indicador mensual por 3 meses', 'Revisión en próxima reunión de dirección'],
+    riesgos: ['Riesgo de recurrencia en procesos similares', 'Oportunidad de automatizar el control', 'Sin riesgos adicionales identificados'],
+    cambios_sgc: ['Actualizar procedimiento relacionado', 'Incorporar indicador en cuadro de mando', 'No se requieren cambios al SGC']
+  };
+
   function handleAIResponse(data, nc) {
     if (!data) { handleFallback(flowStep, nc); return; }
-    const { mensaje, tipo, sugerencias=[], acciones_3p, causa_raiz, correccion, verificacion, riesgos, cambios_sgc, acciones_seleccionadas=[] } = data;
+    let { mensaje, tipo, sugerencias=[], acciones_3p, causa_raiz, correccion, verificacion, riesgos, cambios_sgc, acciones_seleccionadas=[] } = data;
+    // Si la IA no devolvió sugerencias, usar las de respaldo
+    if ((!sugerencias || sugerencias.length === 0) && sugerenciasFallback[tipo]) {
+      sugerencias = sugerenciasFallback[tipo];
+    }
 
     if (tipo === 'resultado_final') {
       appendAIMessage(mensaje || 'Análisis completado según cláusula 10.2.1.');
