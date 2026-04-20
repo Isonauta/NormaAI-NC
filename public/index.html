@@ -791,12 +791,109 @@
   .toast.show { display: block; }
   .toast-green { background: var(--success); }
 
+  /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
   @media (max-width: 768px) {
+    /* Layout */
     .layout { grid-template-columns: 1fr; }
     .sidebar { display: none; }
-    .stats-row { grid-template-columns: 1fr 1fr; }
+    .main { padding: 16px; }
+
+    /* Topbar */
+    .topbar { padding: 0 16px; height: 48px; }
+    .brand-logo { height: 22px; }
+    .norma-badge { display: none; }
+    .demo-badge { font-size: 8px; padding: 3px 7px; }
+
+    /* Gate */
+    .gate-box { width: 92vw; padding: 32px 24px; }
+    .gate-logo { width: 150px; }
+
+    /* Dashboard */
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-value { font-size: 22px; }
+    .page-header { flex-direction: column; gap: 12px; }
+    .page-header .btn-primary { width: 100%; text-align: center; }
+
+    /* Tables — scroll horizontal */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 520px; }
+    td, th { padding: 10px 12px; }
+    .nc-desc { max-width: 180px; }
+
+    /* Detail */
     .detail-grid { grid-template-columns: 1fr; }
+    .right-sidebar { position: static; }
+
+    /* AI Panel */
+    .chat-messages { min-height: 240px; max-height: 340px; padding: 14px; }
+    .chat-bubble { font-size: 12px; max-width: 92%; }
+    .quick-replies { padding: 0 14px 10px; gap: 5px; }
+    .qr-btn { font-size: 11px; padding: 6px 10px; }
+    .ai-footer { padding: 10px 14px; }
+    .btn-analyze { font-size: 12px; padding: 10px; }
+
+    /* 3P Panel */
+    .tres-p-panel { margin: 0 0 16px; }
+    .accion-meta-row { flex-direction: column; }
+    .accion-field { min-width: 100%; }
+
+    /* Form */
+    .form-card { border-radius: 8px; }
+    .form-body { padding: 16px; }
+    .form-footer { flex-direction: column; }
+    .form-footer button { width: 100%; text-align: center; }
+    [style*="grid-template-columns:1fr 1fr"] { 
+      display: grid !important; 
+      grid-template-columns: 1fr !important; 
+    }
+
+    /* Field rows en detalle */
+    .field-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Back btn */
+    .back-btn { margin-bottom: 12px; }
+
+    /* Tabs navbar mobile */
+    .mobile-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      z-index: 50;
+      height: 56px;
+    }
+
+    /* Padding bottom para no tapar contenido con nav */
+    .main { padding-bottom: 72px; }
   }
+
+  /* Nav mobile (oculto en desktop) */
+  .mobile-nav {
+    display: none;
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--ink-3);
+    font-size: 9px;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.3px;
+    transition: color 0.15s;
+    padding: 8px 4px;
+  }
+
+  .mobile-nav-item.active { color: var(--purple); }
+  .mobile-nav-item .mn-icon { font-size: 18px; line-height: 1; }
 </style>
 </head>
 <body>
@@ -838,10 +935,6 @@
       <div class="sidebar-label">Análisis</div>
       <button class="nav-item" onclick="showView('lista', this)"><span class="nav-icon">◎</span> Análisis IA<span class="nav-count purple">2</span></button>
       <button class="nav-item" onclick="showView('dashboard', this)"><span class="nav-icon">↗</span> Indicadores</button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Documentos SGC</div>
-      <button class="nav-item" onclick="showView('documentos', this)"><span class="nav-icon">📁</span> Gestor Documental<span class="nav-count purple">2</span></button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Sistema</div>
@@ -985,17 +1078,6 @@
       </div>
     </div>
 
-    <!-- VIEW: DOCUMENTOS SGC -->
-    <div class="view" id="view-documentos">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Gestor Documental</div>
-          <div class="page-sub">Procedimientos del SGC disponibles para análisis IA</div>
-        </div>
-      </div>
-      <div id="docs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
-    </div>
-
     <!-- NUEVA NC -->
     <div class="view" id="view-nueva">
       <button class="back-btn" onclick="showView('lista', document.querySelector('.nav-item:nth-child(2)'))">← Volver a lista</button>
@@ -1031,6 +1113,19 @@
 
   </div>
 </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <button class="mobile-nav-item active" onclick="mobileNav('dashboard', this)">
+    <span class="mn-icon">▦</span>Dashboard
+  </button>
+  <button class="mobile-nav-item" onclick="mobileNav('lista', this)">
+    <span class="mn-icon">≡</span>NCs
+  </button>
+  <button class="mobile-nav-item" onclick="mobileNav('nueva', this)">
+    <span class="mn-icon">+</span>Nueva
+  </button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1457,36 +1552,10 @@ ${fd.cambios_sgc?`<div class="section"><div class="section-title">⑦ Cambios al
     setTimeout(()=>openDetail(code),400);
   }
 
-  // GESTOR DOCUMENTAL
-  async function loadDocumentos() {
-    const grid = document.getElementById('docs-grid');
-    if (!grid) return;
-    try {
-      const res = await fetch('/api/documentos');
-      const data = await res.json();
-      grid.innerHTML = data.documentos.map(d => `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
-            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--purple);background:var(--purple-light);padding:3px 8px;border-radius:4px;border:1px solid var(--accent-border)">${d.codigo}</div>
-            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-3)">v${d.version}</div>
-          </div>
-          <div style="font-weight:500;font-size:14px;color:var(--ink);margin-bottom:6px">${d.nombre}</div>
-          <div style="font-size:11px;color:var(--ink-3);font-family:'DM Mono',monospace">Cláusula ${d.clausula}</div>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--success)"></div>
-            <span style="font-size:11px;color:var(--success)">Disponible para análisis IA</span>
-          </div>
-        </div>`).join('');
-    } catch(e) {
-      grid.innerHTML = '<div style="color:var(--ink-3);font-size:13px">No se pudieron cargar los documentos.</div>';
-    }
-  }
-
-  // Cargar documentos al mostrar esa vista
-  const origShowView = showView;
-  function showView(name, btn) {
-    origShowView(name, btn);
-    if (name === 'documentos') loadDocumentos();
+  function mobileNav(view, btn) {
+    document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    showView(view, null);
   }
 
   function showToast(msg,ok) {
